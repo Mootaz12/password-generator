@@ -1,113 +1,204 @@
-import Image from "next/image";
+"use client";
+import { ArrowRightOutlined, CopyOutlined } from "@ant-design/icons";
+import { Button, Checkbox, message, Slider } from "antd";
+import { useState } from "react";
+
+type Options = {
+  includeUppercase: boolean;
+  includeNumbers: boolean;
+  includeSymbols: boolean;
+  includeLowercase: boolean;
+};
 
 export default function Home() {
+  const [passwordLength, setPasswordLength] = useState<number>(8);
+  const [numberOfConstraint, setNumberOfConstraint] = useState<number>(1);
+  const [uppercaseChecked, setUppercaseChecked] = useState<boolean>(true);
+  const [lowercaseChecked, setLowercaseChecked] = useState<boolean>(false);
+  const [numbersChecked, setNumbersChecked] = useState<boolean>(false);
+  const [symbolsChecked, setSymbolsChecked] = useState<boolean>(false);
+  const [options, setOptions] = useState<Options>({
+    includeUppercase: true,
+    includeLowercase: false,
+    includeNumbers: false,
+    includeSymbols: false,
+  });
+  const [password, setPassword] = useState<string>("");
+
+  const handleCopy = () => {
+    if (password) {
+      navigator.clipboard
+        .writeText(password)
+        .then(() => {
+          message.success("Text copied to clipboard");
+        })
+        .catch((err) => {
+          console.error("Failed to copy: ", err);
+          message.error("Failed to copy text");
+        });
+    }
+  };
+
+  const getPasswordStrength = (numberOfConstraint: number) => {
+    switch (numberOfConstraint) {
+      case 1:
+        return "very weak";
+      case 2:
+        return "weak";
+      case 3:
+        return "medium";
+      case 4:
+        return "strong";
+      default:
+        return "very weak";
+    }
+  };
+
+  const generatePassword = (length: number, options: Options) => {
+    const {
+      includeUppercase,
+      includeLowercase,
+      includeNumbers,
+      includeSymbols,
+    } = options;
+
+    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lowercase = "abcdefghijklmnopqrstuvwxyz";
+    const numbers = "0123456789";
+    const specialChars = "!@#$%^&*()_+~`|}{[]:;?><,./-=";
+
+    let characters = "";
+
+    if (includeUppercase) characters += uppercase;
+    if (includeLowercase) characters += lowercase;
+    if (includeNumbers) characters += numbers;
+    if (includeSymbols) characters += specialChars;
+
+    if (characters.length === 0) return "";
+
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      password += characters[randomIndex];
+    }
+
+    setPassword(password);
+  };
+
+  const handleCheckboxChange = (setter: any, checked: boolean) => {
+    setter((checked: any) => {
+      const newChecked = !checked;
+      setNumberOfConstraint((prevCount) =>
+        newChecked ? prevCount + 1 : prevCount - 1
+      );
+      return newChecked;
+    });
+  };
+
+  const handleGeneratePassword = () => {
+    const newOptions = {
+      includeUppercase: uppercaseChecked,
+      includeLowercase: lowercaseChecked,
+      includeNumbers: numbersChecked,
+      includeSymbols: symbolsChecked,
+    };
+    setOptions(newOptions);
+    generatePassword(passwordLength, newOptions);
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <main className="flex flex-col gap-3 font-mono w-96 ">
+      <h2 className="font-semibold text-[#807e8d] text-2xl text-center">
+        Password Generator
+      </h2>
+      {password.length > 0 && (
+        <div className="p-4 bg-[#24232b] flex-row flex justify-between">
+          <p className="text-[#525159] text-xl">{password}</p>
+          <Button icon={<CopyOutlined />} onClick={handleCopy}></Button>
+        </div>
+      )}
+      <div className="flex flex-col gap-2 bg-[#24232b] p-4">
+        <div className="flex flex-row justify-between text-xl">
+          <p className="text-white">Character Length</p>
+          <p className="text-[#91d09e]">{passwordLength}</p>
+        </div>
+        <Slider
+          tooltip={{ open: false }}
+          min={6}
+          max={20}
+          defaultValue={8}
+          keyboard={true}
+          onChange={(value) => setPasswordLength(value)}
+        />
+        <Checkbox
+          defaultChecked
+          style={{ color: "white" }}
+          onChange={() =>
+            handleCheckboxChange(setUppercaseChecked, uppercaseChecked)
+          }
+        >
+          Include Uppercase Letters
+        </Checkbox>
+        <Checkbox
+          style={{ color: "white" }}
+          onChange={() =>
+            handleCheckboxChange(setLowercaseChecked, lowercaseChecked)
+          }
+        >
+          Include Lowercase Letters
+        </Checkbox>
+        <Checkbox
+          style={{ color: "white" }}
+          onChange={() =>
+            handleCheckboxChange(setNumbersChecked, numbersChecked)
+          }
+        >
+          Include Numbers
+        </Checkbox>
+        <Checkbox
+          style={{ color: "white" }}
+          onChange={() =>
+            handleCheckboxChange(setSymbolsChecked, symbolsChecked)
+          }
+        >
+          Include Symbols
+        </Checkbox>
+      </div>
+      <div className="bg-[#18171f] flex flex-row items-center py-4 px-6 justify-between">
+        <p className="text-[#525159] font-semibold">STRENGTH</p>
+        <div className="flex flex-row justify-evenly gap-3 items-center">
+          <p className="text-white font-semibold">
+            {getPasswordStrength(numberOfConstraint)}
+          </p>
+          <div
+            className={`outline outline-1 outline-white px-1 py-4 ${
+              uppercaseChecked ? "bg-[#f8cd62] outline-[#f8cd62]" : ""
+            }`}
+          ></div>
+          <div
+            className={`outline outline-1 outline-white px-1 py-4 ${
+              lowercaseChecked ? "bg-[#f8cd62] outline-[#f8cd62]" : ""
+            }`}
+          ></div>
+          <div
+            className={`outline outline-1 outline-white px-1 py-4 ${
+              numbersChecked ? "bg-[#f8cd62] outline-[#f8cd62]" : ""
+            }`}
+          ></div>
+          <div
+            className={`outline outline-1 outline-white px-1 py-4 ${
+              symbolsChecked ? "bg-[#f8cd62] outline-[#f8cd62]" : ""
+            }`}
+          ></div>
         </div>
       </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+      <button
+        onClick={handleGeneratePassword}
+        type="submit"
+        className="px-10 py-3 text-xl text-[#0f2b1e] bg-[#a4ffaf] outline-none hover:text-[#a4ffaf] hover:outline-2 hover:outline-[#a4ffaf] hover:bg-[#18171f]"
+      >
+        GENERATE <ArrowRightOutlined />
+      </button>
     </main>
   );
 }
